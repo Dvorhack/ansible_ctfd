@@ -1,0 +1,65 @@
+---
+- name: Install git
+  apt:
+    name: git
+    state: present
+  become: yes
+
+- name: Install jq
+  apt:
+    name: jq
+    state: present
+  become: yes
+
+- name: Clone git repository
+  git:
+    repo: "{{ git_repo_url }}"
+    dest: "{{ ctfd_path }}"
+    clone: yes
+    update: yes
+    force: yes
+    version: 3.8.0
+
+- name: "Copy 'docker-compose.yml' to '{{ ctfd_path }}/docker-compose.yml'"
+  ansible.builtin.copy:
+    src: "files/docker-compose.yml"
+    dest: "{{ ctfd_path }}/docker-compose.yml"
+  become: true
+
+- name: Run Docker Compose
+  command: docker compose up -d --force-recreate
+  args:
+    chdir: "{{ ctfd_path }}"
+
+- name:  "Copy config for ctfd-setup"
+  ansible.builtin.template:
+    src: "config.j2"
+    dest: "{{ ctfd_path }}/config.yml"
+  become: true
+
+- name: setup ctfd
+  ansible.builtin.shell: |
+    sleep 10
+    wget https://github.com/ctfer-io/ctfd-setup/releases/download/v1.7.3/ctfd-setup_1.7.3_linux_amd64.tar.gz
+    tar xvf ctfd-setup_1.7.3_linux_amd64.tar.gz ctfd-setup
+    ./ctfd-setup --file config.yml --url http://127.0.0.1:8000
+  args:
+    executable: /bin/bash
+    chdir: "{{ ctfd_path }}"
+
+- name: create admin token
+  ansible.builtin.shell: |
+    export URL=http://127.0.0.1:8000
+    nonce=$(curl -sb cookie.txt -c cookie.txt $URL/login | grep -oP 'nonce".+value="\K\w+')
+    curl -o /dev/null -sL -b cookie.txt -c cookie.txt --data "nonce=$nonce&name={{ ctfd_username }}&password={{ ctfd_password }}&_submit=Submit" -X POST $URL/login
+    nonce=$(curl -s -b cookie.txt -c cookie.txt $URL/settings | grep -oP 'csrfNonce'"'"': "\K\w+')
+    curl -sb cookie.txt -c cookie.txt --data '{"description":""}' -H "CSRF-Token: $nonce" -X POST -H 'Content-Type: application/json' $URL/api/v1/tokens | jq -r .data.value
+  args:
+    executable: /bin/bash
+    chdir: "/tmp"
+  register: command_result
+
+
+- name: Save admin token for use in other roles
+  ansible.builtin.set_fact:
+    ctfd_admin_token: "{{ command_result.stdout }}"

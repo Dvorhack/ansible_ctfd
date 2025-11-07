@@ -1,0 +1,57 @@
+---
+
+- name: "Clone challenges' repository to '{{ challenges_install_path }}'"
+  ansible.builtin.git:
+    repo: "{{ challenges_git_url }}"
+    dest: "{{ challenges_install_path }}"
+    force: true
+  become: true
+
+- name: Install required packets
+  apt:
+    name: 
+      - python3-pip
+      - python3-venv
+    state: latest
+    update_cache: true
+  become: yes
+
+- name: Install ctfcli
+  ansible.builtin.pip:
+    name: ctfcli
+    break_system_packages: true
+    state: present
+
+- name: Replace admin token in file
+  ansible.builtin.replace:
+    path: "{{ challenges_install_path }}/.ctf/config"
+    regexp: '^access_token.*'
+    replace: 'access_token = {{ ctfd_admin_token }}'
+
+- name: Deploy challenges on ctfd
+  ansible.builtin.shell: |
+    ctf challenge install
+  ignore_errors: yes
+  args:
+    executable: /bin/bash
+    chdir: "{{ challenges_install_path }}"
+
+- name: Find compose files
+  ansible.builtin.find:
+    paths: "{{ challenges_execices_path }}"
+    recurse: true
+    file_type: file
+    patterns: "{{ compose_patterns }}"
+  register: compose_dirs
+  vars:
+    compose_patterns:
+      - docker-compose.yml
+      - docker-compose.yaml
+      - compose.yml
+      - compose.yaml
+    
+- name: Start challenges containers
+  ansible.builtin.command: docker compose up -d --build
+  args:
+    chdir: "{{ item.path | dirname }}"
+  loop: "{{ compose_dirs.files }}"

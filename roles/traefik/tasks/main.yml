@@ -1,0 +1,60 @@
+---
+
+- name: Creates directory
+  ansible.builtin.file:
+    path: "{{traefik_path}}"
+    state: directory
+
+- name: "Copy 'docker-compose.yml' to '{{ traefik_path }}/docker-compose.yml'"
+  ansible.builtin.template:
+    src: "docker-compose.j2"
+    dest: "{{ traefik_path }}/docker-compose.yml"
+  become: true
+
+- name: "Create docker network: traefik"
+  ansible.builtin.docker_network:
+    name: "traefik"
+    driver: bridge
+
+- name: Run Docker Compose
+  command: docker compose up -d --force-recreate
+  args:
+    chdir: "{{ traefik_path }}"
+
+- name: Install required packets
+  apt:
+    name: 
+      - python3-pip
+    state: latest
+    update_cache: true
+  become: yes
+
+- name: Install python package 'python-ovh'
+  ansible.builtin.pip:
+    name: ovh
+    break_system_packages: true
+  become: yes
+
+- name: Add server IP to DNS
+  synthesio.ovh.domain:
+    domain: "{{ctf_fqdn}}"
+    value: "{{inventory_hostname}}"
+    record_type: "A"
+    name: ""
+    record_ttl: 10
+    endpoint: "ovh-eu"
+    application_key: "{{OVH_application_key}}"
+    application_secret: "{{OVH_application_secret}}"
+    consumer_key: "{{OVH_consumer_key}}"
+
+- name: Add server IP to DNS
+  synthesio.ovh.domain:
+    domain: "{{ctf_fqdn}}"
+    value: "{{inventory_hostname}}"
+    record_type: "A"
+    name: "*"
+    record_ttl: 10
+    endpoint: "ovh-eu"
+    application_key: "{{OVH_application_key}}"
+    application_secret: "{{OVH_application_secret}}"
+    consumer_key: "{{OVH_consumer_key}}"

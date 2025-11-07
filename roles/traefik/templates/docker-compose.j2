@@ -1,0 +1,55 @@
+version: '3'
+
+services:
+  reverse-proxy:
+    image: traefik:v3.5.3
+    container_name: "traefik"
+    restart: always
+    command:
+      - "--log.level=ERROR"
+      - "--api.insecure=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.CTFtcp.address=:1234"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--certificatesresolvers.myresolver.acme.dnschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.dnschallenge.provider=ovh"
+      - "--certificatesresolvers.myresolver.acme.email=vielp@hotmail.fr"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+
+    environment:
+      - "OVH_ENDPOINT=ovh-eu"
+      - "OVH_APPLICATION_KEY={{OVH_application_key}}"
+      - "OVH_APPLICATION_SECRET={{OVH_application_secret}}"
+      - "OVH_CONSUMER_KEY={{OVH_consumer_key}}"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "1234:1234"
+    volumes:
+      # So that Traefik can listen to the Docker events
+      - ./dynamic:/etc/traefik/dynamic
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /opt/letsencrypt:/letsencrypt
+    labels:
+      - "traefik.enable=true"
+
+      - "traefik.http.routers.traefik_https.rule=Host(`dashboard.{{ctf_fqdn}}`)"
+      - "traefik.http.routers.traefik_https.entrypoints=websecure"
+      - "traefik.http.routers.traefik_https.tls=true"
+      - "traefik.http.routers.traefik_https.tls.certResolver=myresolver"
+      - "traefik.http.routers.traefik_https.service=api@internal"
+
+      # Wilcard certificate
+      - traefik.http.routers.traefik_https.tls.domains[0].main={{ctf_fqdn}}
+      - traefik.http.routers.traefik_https.tls.domains[0].sans=*.{{ctf_fqdn}}
+
+    networks:
+      - traefik
+
+networks:
+  traefik:
+    external: true

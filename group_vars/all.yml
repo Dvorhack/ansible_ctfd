@@ -1,0 +1,6 @@
+challenges_git_url: "https://{{ github_token }}@github.com/Dvorhack/cours_assembleur.git"
+challenges_install_path: "/root/challenges"
+challenges_execices_path: "{{challenges_install_path}}/exercices"
+
+
+ctf_fqdn: "ctf.ovh"

@@ -1,0 +1,10 @@
+---
+- name: Setup A/D vulnbox
+  hosts: [ vulnbox ]
+  vars_files:
+    - group_vars/secrets.yml
+  roles:
+    - { role: docker, tags: ['docker'] }
+    - { role: traefik, tags: ['traefik'] }
+    - { role: ctfd, tags: ['ctfd'] }
+    - { role: challenges, tags: ['challs', 'challenges'] }
