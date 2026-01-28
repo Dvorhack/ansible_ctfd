@@ -12,12 +12,15 @@ Change variables in `group_vars/all.yml`
 - ctfd_password
 
 ```
+# full install
 ansible-galaxy collection install git+https://github.com/synthesio/infra-ovh-ansible-module
 ansible-playbook playbook.yml --ask-vault-pass
+
+# only sync challenges
+ansible-playbook playbook.yml --ask-vault-pass  --tag challs -e 'ctfd_admin_token=REDACTED'
 ```
 
 
 ## TODO
 
-- ansible-vault
 - podman
