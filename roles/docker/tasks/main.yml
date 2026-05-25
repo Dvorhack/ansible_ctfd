@@ -1,23 +1,19 @@
 ---
-- name: Install aptitude
+- name: Install dependencies
   apt:
-    name: aptitude
+    name:
+      - aptitude
+      - gnupg
     state: latest
     update_cache: true
   become: yes
 
-- name: Install gpg
-  apt:
-    name: gnupg
-    state: latest
-    update_cache: true
-  become: yes
-
-- name: Add Docker GPG apt Key
-  apt_key:
-    url: https://download.docker.com/linux/ubuntu/gpg
-    state: present
-  become: yes
+- name: Add docker apt repository key.
+  ansible.builtin.get_url:
+    url: "https://download.docker.com/linux/ubuntu/gpg"
+    dest: /etc/apt/trusted.gpg.d/docker.asc
+    mode: "0644"
+    force: true
 
 - name: Add Docker Repository
   apt_repository:
