@@ -1,0 +1,14 @@
+keys:
+  - &dvorhack age1yn39pts4aj9mcs6mgncw3cy409kdatamqaez2mgnh73vrqg98udq0slsnc
+  - &dvorhack_yubikey age1yubikey1qv55na2rrfsj7cwkt30w08qr3ultpvewndrzj28f3pxym9hclqh8zafyqxq
+creation_rules:
+  - path: group_vars/all/secrets.sops.yaml
+    key_groups:
+      - age:
+          - *dvorhack
+          - *dvorhack_yubikey
+  - path_regex: secrets\.ya?ml$
+    key_groups:
+      - age:
+          - *dvorhack
+          - *dvorhack_yubikey

@@ -1,7 +1,19 @@
 
-## Usage:
+## Deploy vps
 
-Change variables in `group_vars/all.yml`
+```
+terraform -chdir=terraform init
+terraform -chdir=terraform plan
+terraform -chdir=terraform apply
+
+
+# to delete servers
+terraform -chdir=terraform destroy
+```
+
+## Deploy ansible config
+
+Change variables in `group_vars/all/all.yml`
 
 `group_vars/secrets.yml` should contain: 
 - github_token
