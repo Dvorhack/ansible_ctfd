@@ -1,0 +1,44 @@
+---
+- name: Setup A/D vulnbox
+  hosts: [ cours ]
+  tasks:
+    - name: Install required packets
+      apt:
+        name:
+          - python3-pip
+        state: latest
+        update_cache: true
+      become: yes
+
+    - name: Install python package 'python-ovh'
+      ansible.builtin.pip:
+        name: ovh
+        break_system_packages: true
+      become: yes
+
+    - name: Add server IP to DNS
+      synthesio.ovh.domain:
+        domain: "{{ctf_fqdn}}"
+        state: present
+        value: "{{ ansible_default_ipv4.address }}"
+        record_type: "A"
+        name: ""
+        record_ttl: 10
+        endpoint: "ovh-eu"
+        application_key: "{{OVH_application_key}}"
+        application_secret: "{{OVH_application_secret}}"
+        consumer_key: "{{OVH_consumer_key}}"
+
+
+    - name: Add server IP to DNS
+      synthesio.ovh.domain:
+        domain: "{{ctf_fqdn}}"
+        state: present
+        value: "{{ ansible_default_ipv4.address }}"
+        record_type: "A"
+        name: "*"
+        record_ttl: 10
+        endpoint: "ovh-eu"
+        application_key: "{{OVH_application_key}}"
+        application_secret: "{{OVH_application_secret}}"
+        consumer_key: "{{OVH_consumer_key}}"

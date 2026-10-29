@@ -25,7 +25,19 @@
           requests
           jmespath     # json_query filter
           netaddr
+          python-dateutil
         ]);
+
+        sshConfig = pkgs.writeText "ssh_config" ''
+                  Host *
+                    AddKeysToAgent yes
+                    ServerAliveInterval 60
+                  Host github.com
+                       HostName github.com
+                       User git
+                       IdentityFile ~/.ssh/id_ed25519_sk_rk
+                       IdentitiesOnly yes
+                '';
 
         # The collection is not published on Galaxy, only on GitHub.
         synthesio-ovh = pkgs.stdenvNoCC.mkDerivation (finalAttrs: {
@@ -84,10 +96,15 @@
             pkgs.hcloud
           ];
 
+
           shellHook = ''
             export ANSIBLE_COLLECTIONS_PATH="${synthesio-ovh}:$HOME/.ansible/collections"
             export ANSIBLE_COLLECTIONS_PATHS="$ANSIBLE_COLLECTIONS_PATH"  # pre-2.10 name
             export ANSIBLE_HOST_KEY_CHECKING=False
+            alias ssh="ssh -F ${sshConfig}"
+            export GIT_SSH_COMMAND="ssh -F ${sshConfig}"
+            export ANSIBLE_SSH_ARGS="-F ${sshConfig} -o ControlMaster=auto -o ControlPersist=60s"
+
             echo "ansible $(ansible --version | head -n1 | cut -d' ' -f2) + synthesio.ovh ${synthesio-ovh.version}"
           '';
         };

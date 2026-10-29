@@ -1,6 +1,6 @@
 ---
 - name: Setup A/D vulnbox
-  hosts: [ vulnbox ]
+  hosts: [ cours ]
   roles:
     - { role: docker, tags: ['docker'] }
     - { role: traefik, tags: ['traefik'] }

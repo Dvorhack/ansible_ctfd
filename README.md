@@ -9,6 +9,8 @@ terraform -chdir=terraform apply
 
 # to delete servers
 terraform -chdir=terraform destroy
+
+export HCLOUD_TOKEN=$(sops -d --extract '["hcloud_token"]' terraform/secrets.yaml)
 ```
 
 ## Deploy ansible config
@@ -31,8 +33,3 @@ ansible-playbook playbook.yml --ask-vault-pass
 # only sync challenges
 ansible-playbook playbook.yml --ask-vault-pass  --tag challs -e 'ctfd_admin_token=REDACTED'
 ```
-
-
-## TODO
-
-- podman
